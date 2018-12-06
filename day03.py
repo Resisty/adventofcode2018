@@ -36,7 +36,29 @@ def part2(args):
     """ Solve the puzzle
     """
     inpt = validate_and_open(args.input)
-    return "Not implemented"
+    fabric = collections.defaultdict(list)
+    max_x, max_y = 0, 0
+    claim = collections.namedtuple('Claim', 'id x_offset y_offset x_len y_len')
+    claims = []
+    ids = set()
+    for line in inpt.strip().split('\n'):
+        tokens = re.search(r'#(\d+) @ (\d+),(\d+): (\d+)x(\d+)', line).groups()
+        newclaim = claim(int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3]), int(tokens[4]))
+        claims.append(newclaim)
+        max_x = max(newclaim.x_offset + newclaim.x_len, max_x)
+        max_y = max(newclaim.y_offset + newclaim.y_len, max_y)
+        ids.update([newclaim.id])
+    for claim in claims:
+        for i in range(claim.y_len):
+            for j in range(max_x * claim.y_offset + i * max_x + claim.x_offset + 1,
+                           claim.x_len + max_x * claim.y_offset + i * max_x + claim.x_offset + 1):
+                fabric[j].append(claim.id)
+                if len(fabric[j]) > 1:
+                    ids -= set(fabric[j])
+    if len(ids) > 1:
+        print(ids, len(ids))
+        return "You fucked up."
+    return list(ids)[0]
 
 
 def validate_and_open(path):
