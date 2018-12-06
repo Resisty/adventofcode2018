@@ -4,7 +4,6 @@
 
 import os
 import re
-import pprint
 import collections
 import argparse
 
@@ -22,13 +21,15 @@ def part1(args):
         claims.append(claim(int(tokens[0]), int(tokens[1]), int(tokens[2]), int(tokens[3])))
         max_x = max(claims[-1].x_offset + claims[-1].x_len, max_x)
         max_y = max(claims[-1].y_offset + claims[-1].y_len, max_y)
-    print(f'Total spots: {max_x * max_y}')
+    result = set()
     for claim in claims:
         for i in range(claim.y_len):
             for j in range(max_x * claim.y_offset + i * max_x + claim.x_offset + 1,
                            claim.x_len + max_x * claim.y_offset + i * max_x + claim.x_offset + 1):
                 fabric[j] += 1
-    return len([i for i, j in fabric.items() if j > 1])
+                if fabric[j] > 1:
+                    result.update([j])
+    return len(result)
 
 
 def part2(args):
