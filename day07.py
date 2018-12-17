@@ -47,9 +47,7 @@ def part1(args):
         grps = re.search(r'Step (\w+) must be finished before step (\w+) can begin.', line)
         bfr, aftr = grps.groups()
         nodes[bfr].after = sorted(list(set(nodes[bfr].after + [nodes[aftr]])))
-        #print(f'nodes[{bfr}].after: {[i.name for i in nodes[bfr].after]}')
         nodes[aftr].before = sorted(list(set(nodes[aftr].before + [nodes[bfr]])))
-        #print(f'nodes[{aftr}].before: {[i.name for i in nodes[aftr].before]}')
     queue = PriorityQueue()
     for _, node in nodes.items():
         if not node.before:
@@ -75,14 +73,15 @@ def part1(args):
             continue
         print(f'Selected node {i.name} because it is first alphabetically.')
         if i.visited:
-            print(f'Node {i.name} has already been visited. You goofed.')
-            raise RuntimeError('Dipshit.')
+            print(f'Already visited {i.name}, skipping.')
+            continue
         i.visited = True
         answer += i.name
         print(f"Answer becomes: {answer}")
         for nextnode in i.after:
-            queue.put(nextnode)
-        print('Updating queue:')
+            if not nextnode.visited:
+                queue.put(nextnode)
+        print(f"Adding {answer[-1]}'s next hops to the queue:")
         print([j.name for j in queue.__dict__['queue']])
     for i in nodes:
         assert i in answer
