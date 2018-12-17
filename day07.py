@@ -7,6 +7,7 @@ import re
 import collections
 import argparse
 import pprint
+from queue import PriorityQueue, Empty
 
 
 class Node:
@@ -45,39 +46,44 @@ def part1(args):
     for line in inpt.strip().split('\n'):
         grps = re.search(r'Step (\w+) must be finished before step (\w+) can begin.', line)
         bfr, aftr = grps.groups()
-        nodes[bfr].after = list(set(sorted(nodes[bfr].after + [nodes[aftr]])))
+        nodes[bfr].after = sorted(list(set(nodes[bfr].after + [nodes[aftr]])))
         #print(f'nodes[{bfr}].after: {[i.name for i in nodes[bfr].after]}')
-        nodes[aftr].before = list(set(sorted(nodes[aftr].before + [nodes[bfr]])))
+        nodes[aftr].before = sorted(list(set(nodes[aftr].before + [nodes[bfr]])))
         #print(f'nodes[{aftr}].before: {[i.name for i in nodes[aftr].before]}')
-    queue = sorted([node for name, node in nodes.items() if not node.before])
+    queue = PriorityQueue()
+    for _, node in nodes.items():
+        if not node.before:
+            queue.put(node)
     print('Nodes without prior tasks:')
-    print([i.name for i in queue])
-    node = queue.pop(0)
+    print([i.name for i in queue.__dict__['queue']])
+    node = queue.get()
     node.visited = True
     answer = node.name
     print(f'Selected node {answer} because it is first alphabetically.')
-    queue = sorted(list(set(queue + node.after)))
+    for nextnode in node.after:
+        queue.put(nextnode)
     print(f"Adding {answer[-1]}'s next hops to the queue:")
-    print([i.name for i in queue])
-    while queue:
-        for i in queue:
-            if any([not j.visited for j in i.before]):
-                print(f"Removing {i.name} from queue because dependent tasks have not been visited yet")
-                print(f"{i.name}'s dependent tasks: {[j.name for j in i.before]}")
-                queue.remove(i)
-        print('Remaining available in queue:')
-        print([i.name for i in queue])
-        node = queue.pop(0)
-        print(f'Selected node {node.name} because it is first alphabetically.')
-        if node.visited:
-            print(f'Node {node.name} has already been visited. Skipping.')
+    print([i.name for i in queue.__dict__['queue']])
+    while queue.not_empty:
+        try:
+            i = queue.get_nowait()
+        except Empty:
+            break
+        print(f'Got node from front of queue: {i.name}')
+        if any([not j.visited for j in i.before]):
+            print(f"Removing {i.name} from queue because dependent tasks have not been visited yet")
             continue
-        node.visited = True
-        answer += node.name
+        print(f'Selected node {i.name} because it is first alphabetically.')
+        if i.visited:
+            print(f'Node {i.name} has already been visited. You goofed.')
+            raise RuntimeError('Dipshit.')
+        i.visited = True
+        answer += i.name
         print(f"Answer becomes: {answer}")
-        queue = sorted(list(set(queue + node.after)))
+        for nextnode in i.after:
+            queue.put(nextnode)
         print('Updating queue:')
-        print([i.name for i in queue])
+        print([j.name for j in queue.__dict__['queue']])
     for i in nodes:
         assert i in answer
     return answer
